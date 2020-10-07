@@ -9,6 +9,23 @@ NOTE: NodeJS is required
 From a command prompt:
 ```
 node convert input.bas output.bas
+node convert -x -r input.bas output.bas
+convert input.bas output.bas
+```
+
+```
+X16 Enhanced Basic Transpiler
+
+Usage: convert [-OPTIONS] src.bas dst.bas
+   or: node convert src.bas dst.bas
+
+OPTIONS:
+--------
+
+-x    Run X16 Emulator
+-r    Run program (auto add CLS and RUN to the end)
+-p    Use PETSCII character set
+
 ```
  
 ## Syntax
