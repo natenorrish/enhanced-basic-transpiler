@@ -14,7 +14,7 @@ if (src === null || dst === null)
 // regular expressions for parsing @LABEL and @LABEL:
 var reSubName = /@([A-Z_]+[0-9_]*)(:)?/i;
 // for parsing variable names NAME$, NAME%, NAME!
-var reVarName = /(^|[^A-Z0-9_]|\s+)([A-Z_]+[0-9_]*)([%$!]{1})/ig;
+var reVarName = /(^|[^A-Z0-9_]|\s+)([A-Z_]+[0-9_]*)([%$!#]{1})/ig;
 // regular expression for @DEFINE NAME VALUE
 var reDefine = /#DEFINE\s+([A-Z_]+[0-9_]*)\s+([^\n]+)/i;
 var reDefineVars = null;
@@ -74,7 +74,7 @@ for (var i=0; i<code.length; i++)
 		var val = match[2];
 
 		defines[name] = val;
-		reDefineVars = new RegExp('(^|[^A-Z0-9_]+)(' + Object.keys(defines).join('|') + ')([^A-Z0-9_%!$]+|$)');
+		reDefineVars = new RegExp('(^|[^A-Z0-9_]+)(' + Object.keys(defines).join('|') + ')([^A-Z0-9_%!$#]+|$)');
 
 		code[i] = '';
 		continue;
@@ -208,7 +208,7 @@ function getVarAlias(name, type)
 			varCount++;
 		}
 
-		if (type === '!') type = '';
+		if (type === '!' || type === '#') type = '';
 		vars[_name] = alias.trim() + type;
 		varCount++;
 	}
