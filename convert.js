@@ -1,13 +1,70 @@
 var fs = require('fs');
-
+var { exec } = require('child_process');
 var args = process.argv;
-var src = args[2] || null;
-var dst = args[3] || null;
+var usePETSCII = false, runX16 = false, runProg = false, invalidArgs = false,
+    src, dst;
 
-if (src === null || dst === null)
+// parse command line arguments
+
+if (args.length < 4)
 {
-	console.log('Usage: convert src.bas dst.bas');
-	console.log('   or: node convert src.bas dst.bas');
+	invalidArgs = true;
+}
+else
+{
+	var nonFlagArgs = [];
+
+	for (var i=2; i<args.length; i++)
+	{
+		switch (args[i])
+		{
+			case '-p': usePETSCII = true; break;
+			case '-x': runX16 = true; break;
+			case '-r': runProg = true; break;
+			default:
+				if (args[i][0] === '-')
+				{
+					invalidArgs = true;
+				}
+				else
+				{
+					nonFlagArgs.push(args[i]);
+				}
+		}
+
+		if (invalidArgs) break;
+	}
+
+	if (nonFlagArgs.length !== 2)
+	{
+		invalidArgs = true;
+	}
+	else
+	{
+		src = nonFlagArgs[0];
+		dst = nonFlagArgs[1];
+	}
+}
+
+if (invalidArgs)
+{
+	console.log(
+		[
+			'',
+			'X16 Enhanced Basic Transpiler',
+			'',
+			'Usage: convert [-OPTIONS] src.bas dst.bas',
+			'   or: node convert src.bas dst.bas',
+			'',
+			'OPTIONS:',
+			'--------',
+			'',
+			'-x    Run X16 Emulator',
+			'-r    Run program (auto add CLS and RUN to the end)',
+			'-p    Use PETSCII character set'
+		].join('\n')
+	);
+
 	return;
 }
 
@@ -37,8 +94,12 @@ var varLoChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 // if a generated variable name contains one of the following,
 // it'll be disgarded and another name will be generated
-var reservedWords = [
-	'TO'
+var reservedTwoLenWords = [
+	'TO', 'GO', 'IF', 'OR', 'ST', 'TI'
+];
+
+var reservedVars = [
+	'GET#', 'INPUT#', 'PRINT#'
 ];
 
 
@@ -104,10 +165,18 @@ for (var i=0; i<code.length; i++)
 			var type = match[3];
 			var alias = getVarAlias(name, type);
 
-			line = line.replace(new RegExp('([^A-Z0-9_]|^|\s+)' + name + '\\' + type), match[1] + alias);
-			code[i] = line;
-
-			reVarName.lastIndex = match.index + alias.length + match[1].length;
+			if (alias !== false)
+			{
+				line = line.replace(new RegExp('([^A-Z0-9_]|^|\s+)' + name + '\\' + type), match[1] + alias);
+				code[i] = line;
+				reVarName.lastIndex = match.index + alias.length + match[1].length;
+			}
+			else
+			{
+				// reserved var name found, skip it
+				reVarName.lastIndex += name.length + type.length;
+			}
+			
 		}
 		else
 		{
@@ -165,7 +234,7 @@ for (var i=0; i<code.length; i++)
 }
 
 
-var str = 'PRINT CHR$($0F)\r\n' + res.join('\r\n') + '\r\nCLS\r\nRUN\r\n';
+var str = (usePETSCII ? '' : '\x0F') + res.join('\r\n') + '\r\n' + (runProg ? 'CLS\r\nRUN\r\n' : '');
 
 // reduce multiple whitespaces to single space
 str = str.replace(/[\t ]+/g, ' ');
@@ -176,9 +245,21 @@ for (var i=0; i<strings.length; i++)
 
 fs.writeFileSync(dst, str);
 
+exec(
+	'x16emu -bas ' + dst + ' -keymap en-us',
+	(error, stdout, stderr) =>
+	{
+
+	}
+);
+
+
 function getVarAlias(name, type)
 {
 	var _name = name + type;
+
+	if (reservedVars.indexOf(_name) > -1)
+		return false;
 
 	if (typeof(vars[_name]) === 'undefined')
 	{
@@ -191,9 +272,9 @@ function getVarAlias(name, type)
 			alias = varHiChars[hi] + varLoChars[lo];
 
 			var found = false;
-			for (var i=0; i<reservedWords.length; i++)
+			for (var i=0; i<reservedTwoLenWords.length; i++)
 			{
-				if (reservedWords[i].indexOf(alias) > -1)
+				if (reservedTwoLenWords[i].indexOf(alias) > -1)
 				{
 					found = true;
 					break;
