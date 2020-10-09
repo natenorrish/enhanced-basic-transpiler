@@ -1,4 +1,4 @@
 @echo off
 cls
-node ebt -r %*
 
+node %~p0\ebt %*

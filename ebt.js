@@ -10,11 +10,11 @@ var fs = require('fs');
 var { exec } = require('child_process');
 var args = process.argv;
 var usePETSCII = false, runProg = false, invalidArgs = false,
-    src, dst;
+    src, dst, reason = false;
 
 // parse command line arguments
 
-if (args.length < 4)
+if (args.length < 3)
 {
 	invalidArgs = true;
 }
@@ -42,14 +42,49 @@ else
 		if (invalidArgs) break;
 	}
 
-	if (nonFlagArgs.length !== 2)
+	if (nonFlagArgs.length === 1)
 	{
-		invalidArgs = true;
+		src = nonFlagArgs[0];
+		var ext = /\.[a-z0-9]+$/i.exec(src);
+		ext = ext ? ext[0] : '.bas';
+
+		if (ext.toLowerCase() == '.prg')
+		{
+			invalidArgs = true;
+			reason = 'Invalid source file, must be a text BASIC file.';
+		}
+		else
+		{
+			dst = src.substr(0, src.length - ext.length) + '.prg';
+		}
+	}
+	else if (nonFlagsArgs.length === 2)
+	{
+		src = nonFlagArgs[0];
+		var ext = /\.[a-z0-9]+$/i.exec(src);
+		ext = ext ? ext[0] : '.bas';
+
+		if (ext.toLowerCase() == '.prg')
+		{
+			invalidArgs = true;
+			reason = 'Invalid source file, must be a text BASIC file.';
+		}
+
+		dst = nonFlagArgs[1];
 	}
 	else
 	{
-		src = nonFlagArgs[0];
-		dst = nonFlagArgs[1];
+		invalidArgs = true;
+	}
+}
+
+if (!invalidArgs)
+{
+	// check source file exists
+	if (!fs.existsSync(src))
+	{
+		invalidArgs = true;
+		reason = 'Source file does not exist: ' + src;
 	}
 }
 
@@ -60,15 +95,22 @@ if (invalidArgs)
 			'',
 			'Enhanced Basic Transpiler',
 			'',
-			'Usage: node ebt [-OPTIONS] src.bas dst.prg',
+			'Usage: node ebt [-OPTIONS] src.bas [dst.prg]',
 			'',
 			'OPTIONS:',
 			'--------',
 			'',
 			'-r    Run program',
-			'-p    Use PETSCII character set'
+			'-p    Use PETSCII character set',
+			'',
+			''
 		].join('\n')
 	);
+
+	if (reason)
+	{
+		console.log('ERROR: ' + reason);
+	}
 
 	return;
 }
