@@ -57,3 +57,8 @@ C/C++ style define directive - all references to the defined variable will be re
 #DEFINE SOME_DEF_VAR    10
 ```
 
+
+## Possible Future Features - Experimental
+
+* Inline ASM 
+
