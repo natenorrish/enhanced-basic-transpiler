@@ -1,4 +1,4 @@
-# x16-enhanced-basic-transpiler
+# Enhanced BASIC Transpiler
  Convert an enhanced version of BASIC to standard BASIC.
  
  Line numbers are not required, nor are they recommended with this transpiler, as they will be automatically inserted for you.
