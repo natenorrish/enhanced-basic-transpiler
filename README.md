@@ -1,29 +1,27 @@
 # Enhanced BASIC Transpiler
- Convert an enhanced version of BASIC to standard BASIC.
+ Convert an enhanced version of BASIC to standard BASIC tokenized PRG file.
  
- Line numbers are not required, nor are they recommended with this transpiler, as they will be automatically inserted for you.
+ Line numbers are not currently supported in this version - future versions will allow adding line numbers.
 
 ## Usage
 NOTE: NodeJS is required
 
 From a command prompt:
 ```
-node convert input.bas output.bas
-node convert -x -r input.bas output.bas
-convert input.bas output.bas
+node ebt input.bas output.prg
+node ebt -r input.bas output.prg
+ebt input.bas output.bas
 ```
 
 ```
-X16 Enhanced Basic Transpiler
+Enhanced Basic Transpiler
 
-Usage: convert [-OPTIONS] src.bas dst.bas
-   or: node convert src.bas dst.bas
+Usage: node ebt [-OPTIONS] src.bas dst.prg
 
 OPTIONS:
 --------
 
--x    Run X16 Emulator
--r    Run program (auto add CLS and RUN to the end)
+-r    Run program
 -p    Use PETSCII character set
 
 ```
@@ -31,12 +29,10 @@ OPTIONS:
 ## Syntax
 
 ### Variables
-Currenly all variables must have a type character ($, %, #). This will be fixed in a future version to allow no type character.
-
 ```
 SOME_STRING$ = "testing"           ' AA$ = "testing"
 INT_VAR% = 10                      ' AB% = 10
-NUM_VAR# = 20                      ' AC = 20
+NUM_VAR = 20                       ' AC = 20
 ```
 
 
