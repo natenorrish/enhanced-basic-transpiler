@@ -1,5 +1,5 @@
 /*
-**  Copyright 2019 Nate Norrish
+**  Copyright 2020 Nate Norrish
 **
 **  This source code is licensed under the MIT license found in the
 **  LICENSE file in the root directory of this source tree.
