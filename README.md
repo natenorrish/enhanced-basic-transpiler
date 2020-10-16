@@ -57,8 +57,38 @@ C/C++ style define directive - all references to the defined variable will be re
 #DEFINE SOME_DEF_VAR    10
 ```
 
+### Inline Assembly (requires CC65)
 
-## Possible Future Features - Experimental
+```
+#ASM(STRING[40] ARG1$, BYTE ARG2, WORD ARG3)
+    ; asm code here - using ARG1$ will be replaced with the memory
+    ; location of the ARG1$ string
+#ENDASM
+```
 
-* Inline ASM 
+The following example prints A to Z:
+
+```
+GOSUB @PRINT_ALPHABET
+END
+
+@PRINT_ALPHABET:
+
+    FIRST_LETTER = 65
+	
+    #ASM(BYTE FIRST_LETTER)
+        ldx FIRST_LETTER
+
+    nextChar:
+        txa
+        jsr $FFD2
+        inx
+        cpx #91
+        bne nextChar
+
+    #ENDASM
+
+    RETURN
+```
+
 
