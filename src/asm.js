@@ -22,13 +22,14 @@ module.exports = (EBT) =>
 			var line = EBT.removeLine();
 			line = line.replace('#ASM', '');
 
-			var tok = EBT.tokenizer, args = {}, asmLines = [], varDataOffset = this.varDataStart;
+			var tok = EBT.tokenizer;
 			tok.parse(line);
+
+			var args = {}, asmLines = [], varDataOffset = this.varDataStart;
+			var argType, argName, argSize, argOffset, setVar, setVarSubPrefix, initLines = [];
 
 			if (tok.valAndNext('('))
 			{
-				var argType, argName, argSize, argOffset, setVar, setVarSubPrefix, initLines = [];
-
 				while (true)
 				{
 					if (EBT.asmValidArgTypes.indexOf(tok.val()) < 0)
@@ -81,47 +82,52 @@ module.exports = (EBT) =>
 					if (tok.val(')'))
 						break;
 				}
+			}
 
 
 
-				var argsRE = new RegExp('(^|[^A-Z0-9_]|\s)(' +
-					Object.keys(args).join('|').replace(/\$/, '\\$') +
-					')([^A-Z0-9_]|\s|$)', 'i');
+			var argsRE = new RegExp('(^|[^A-Z0-9_]|\s)(' +
+				Object.keys(args).join('|').replace(/\$/, '\\$') +
+				')([^A-Z0-9_]|\s|$)', 'ig');
 
-				// find #ENDASM
-				var line;
-				while (true)
+			// find #ENDASM
+			var line;
+			while (true)
+			{
+				line = EBT.getLine();
+
+				if (line === false || /#ENDASM/i.test(line))
+					break;
+
+				asmLine = EBT.removeLine().trim();
+
+				while (match = argsRE.exec(asmLine))
 				{
-					line = EBT.getLine();
-
-					if (!line || /#ENDASM/i.test(line))
+					if (match[0].trim() == '')
 						break;
 
-					asmLine = EBT.removeLine().trim(); //EBT.lines.splice(EBT.ln, 1)[0];
+					argName = match[2];
+					var arg = args[argName];
 
-					while (match = argsRE.exec(asmLine))
+					if (typeof(arg) !== 'undefined')
 					{
-						argName = match[2];
-						var arg = args[argName];
-
 						asmLine = asmLine.replace(match[0], match[1] + '$' + EBT.toHex(arg.offset) + match[3]);
 					}
-
-
-					asmLine = asmLine.trim();
-
-					if (asmLine !== '')
-						asmLines.push(asmLine);
 				}
 
-				if (line != '#ENDASM')
-				{
-					EBT.error('Expecting #', EBT.ln);
-				}
-				else
-				{
-					EBT.removeLine();
-				}
+				asmLine = asmLine.trim();
+
+				if (asmLine !== '')
+					asmLines.push(asmLine);
+			}
+
+			if (line != '#ENDASM')
+			{
+				EBT.error('Expecting #', EBT.ln);
+			}
+			else
+			{
+				EBT.removeLine();
 			}
 
 			console.log(asmLines);
@@ -222,6 +228,7 @@ module.exports = (EBT) =>
 
 			EBT.lines = EBT.lines.concat(
 				(`
+				END
 				@ASM_RESET:
 					ASM_DATA_ADDR = ${this.varDataStart}
 					RETURN
