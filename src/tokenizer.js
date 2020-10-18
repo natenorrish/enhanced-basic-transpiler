@@ -67,6 +67,11 @@ module.exports = (EBT) =>
 				}
 			}
 
+			if (get !== null)
+			{
+				tokens.push([ tok, get ]);
+			}
+
 			this.tokens = tokens;
 			this.pos = 0;
 
@@ -81,9 +86,7 @@ module.exports = (EBT) =>
 			var type = this.tokens[this.pos][1];
 
 			if (isType !== false)
-			{
 				return (isType === type);
-			}
 
 			return type;
 		},
@@ -96,9 +99,7 @@ module.exports = (EBT) =>
 			var val = this.tokens[this.pos][0];
 
 			if (isVal !== false)
-			{
 				return (isVal === val);
-			}
 
 			return val;
 		},
@@ -106,14 +107,20 @@ module.exports = (EBT) =>
 		typeAndNext: function (isType=false)
 		{
 			var type = this.type(isType);
-			this.next();
+
+			if (type !== false)
+				this.next();
+
 			return type;
 		},
 
 		valAndNext: function (isVal=false)
 		{
 			var val = this.val(isVal);
-			this.next();
+
+			if (val !== false)
+				this.next();
+
 			return val;
 		},
 

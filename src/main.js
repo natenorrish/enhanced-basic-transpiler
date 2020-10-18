@@ -23,6 +23,7 @@ var EBT = {
 	comments     : [],
 	labels       : [],
 	numbers      : [],
+	defines      : {},
 	labelLineMap : {},
 	memLocation  : 0x0801,
 	ln           : 0,
@@ -146,8 +147,17 @@ var EBT = {
 				}
 				else if (match[0] === '#DEFINE')
 				{
-					// line = '';
-					this.removeLine();
+					var def = /#DEFINE\s+([A-Z][A-Z0-9_]+)\s+(.*)/i.exec(line);
+
+					if (!def)
+					{
+						this.error('Invalid #DEFINE');
+					}
+					else
+					{
+						this.defines[def[1]] = def[2];
+						this.removeLine();
+					}
 				}
 				else
 				{
@@ -181,12 +191,17 @@ var EBT = {
 
 		if (this.useASM) this.asm.inject();
 
+		this.definesRE = new RegExp('(^|[^A-Z0-9_]|\\s)(' + Object.keys(this.defines).join(')|(') + ')($|[^A-Z0-9_]|\\s)');
+
 		// SECOND PASS: Replace variables, labels and keywords
 		var labelLineNum = 10;
 		var match, line;
 		this.ln = 0;
 		while ((line = this.getLine()) !== false)
 		{
+			// replace defines
+			line = this.replaceDefines(line);
+
 			// numbers
 			while (match = /\$[A-F0-9]+/i.exec(line))
 			{
@@ -339,6 +354,17 @@ var EBT = {
 			this.setLine(_line);
 			this.nextLine();
 		}
+	},
+
+	replaceDefines: function (str)
+	{
+		var match;
+		while (match = this.definesRE.exec(str))
+		{
+			str = str.replace(match[0], match[1] + this.defines[match[2]] + match[3]);
+		}
+
+		return str;
 	},
 
 	build: function()

@@ -25,7 +25,7 @@ module.exports = (EBT) =>
 			var tok = EBT.tokenizer;
 			tok.parse(line);
 
-			var args = {}, asmLines = [], varDataOffset = this.varDataStart;
+			var args = {}, argCount = 0, asmLines = [], varDataOffset = this.varDataStart;
 			var argType, argName, argSize, argOffset, setVar, setVarSubPrefix, initLines = [];
 
 			if (tok.valAndNext('('))
@@ -76,8 +76,12 @@ module.exports = (EBT) =>
 
 					args[argName] = { name: argName, type: argType, size: argSize, offset: varDataOffset };
 					varDataOffset += argSize;
+					argCount++;
 
 					this.setVarSubsUsed[setVarSubPrefix] = setVarSubPrefix;
+
+					if (tok.valAndNext(','))
+						continue;
 
 					if (tok.val(')'))
 						break;
@@ -130,17 +134,19 @@ module.exports = (EBT) =>
 				EBT.removeLine();
 			}
 
-			console.log(asmLines);
+			if (argCount)
+			{
+				initLines.splice(0, 0, `ASM_DATA_ADDR = ${this.varDataStart}`);
+			}
 
-			initLines.splice(0, 0, 'GOSUB @ASM_RESET');
 			EBT.insertLines(initLines);
+
+			console.log(asmLines.join('\r\n'));
 			this.compile(asmLines);
 		},
 
 		compile: function (asmLines)
 		{
-			console.log(asmLines.join('\r\n'));
-
 			// compile ASM 
 			fs.writeFileSync(
 				'temp.asm',
@@ -187,11 +193,6 @@ module.exports = (EBT) =>
 						POKE ASM_DATA_ADDR, ASM_NUM AND $FF
 						ASM_DATA_ADDR = ASM_DATA_ADDR + 1
 						RETURN
-
-					@ASM_GET_BYTE:
-						ASM_NUM = PEEK(ASM_DATA_ADDR)
-						RETURN
-
 				`;
 			}
 
@@ -202,10 +203,6 @@ module.exports = (EBT) =>
 						POKE ASM_DATA_ADDR, ASM_NUM AND $FF
 						POKE ASM_DATA_ADDR + 1, INT(ASM_NUM / 256)
 						ASM_DATA_ADDR = ASM_DATA_ADDR + 2
-						RETURN
-
-					@ASM_GET_WORD:
-						ASM_NUM = PEEK(ASM_DATA_ADDR) + (PEEK(ASM_DATA_ADDR + 1) * 256)
 						RETURN
 				`;
 			}
@@ -229,10 +226,6 @@ module.exports = (EBT) =>
 			EBT.lines = EBT.lines.concat(
 				(`
 				END
-				@ASM_RESET:
-					ASM_DATA_ADDR = ${this.varDataStart}
-					RETURN
-
 				@ASM_BOOTSTRAP:
 					FOR ASM_I = 0 TO ${this.programOffset} - 1
 						POKE ${asmDstHex} + ASM_I, PEEK(ASM_SRC + ASM_I)
