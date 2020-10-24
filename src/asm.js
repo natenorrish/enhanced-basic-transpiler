@@ -103,9 +103,9 @@ module.exports = (EBT) =>
 				if (line === false || /#ENDASM/i.test(line))
 					break;
 
-				asmLine = EBT.removeLine().trim();
+				line = EBT.replaceDefines(EBT.removeLine().trim());
 
-				while (match = argsRE.exec(asmLine))
+				while (match = argsRE.exec(line))
 				{
 					if (match[0].trim() == '')
 						break;
@@ -115,14 +115,14 @@ module.exports = (EBT) =>
 
 					if (typeof(arg) !== 'undefined')
 					{
-						asmLine = asmLine.replace(match[0], match[1] + '$' + EBT.toHex(arg.offset) + match[3]);
+						line = line.replace(match[0], match[1] + '$' + EBT.toHex(arg.offset) + match[3]);
 					}
 				}
 
-				asmLine = asmLine.trim();
+				line = line.trim();
 
-				if (asmLine !== '')
-					asmLines.push(asmLine);
+				if (line !== '')
+					asmLines.push(line);
 			}
 
 			if (line != '#ENDASM')

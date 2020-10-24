@@ -156,8 +156,10 @@ var EBT = {
 					else
 					{
 						this.defines[def[1]] = def[2];
-						this.removeLine();
+						this.setLine('');
 					}
+
+					this.definesRE = new RegExp('(^|[^A-Z0-9_]|\\s)(' + Object.keys(this.defines).join('|') + ')($|[^A-Z0-9_]|\\s)');
 				}
 				else
 				{
@@ -191,8 +193,6 @@ var EBT = {
 
 		if (this.useASM) this.asm.inject();
 
-		this.definesRE = new RegExp('(^|[^A-Z0-9_]|\\s)(' + Object.keys(this.defines).join(')|(') + ')($|[^A-Z0-9_]|\\s)');
-
 		// SECOND PASS: Replace variables, labels and keywords
 		var labelLineNum = 10;
 		var match, line;
@@ -215,7 +215,7 @@ var EBT = {
 				line = this.insertTag(line, 'n', index, match.index, match[0].length);
 			}
 
-			while (match = /(^|[^A-Z0-9_]|\s+)([A-Z_]+[A-Z0-9_]*([%$!#:]{1})?)/.exec(line))
+			while (match = /(^|[^A-Z0-9_]|\s)([A-Z_]+[A-Z0-9_]*([%$!#:]{1})?)/.exec(line))
 			{
 
 				// check if it's a reserved keyword
@@ -283,12 +283,6 @@ var EBT = {
 			// replace operators
 			while (match = /[+*/^<>=-]/.exec(line))
 			{
-				if (this.binaryMap[match[0]] === undefined)
-				{
-					console.log(match);
-					return;
-				}
-
 				line = this.insertTag(line, 'o', this.binaryMap[match[0]], match.index, 1);
 			}
 
@@ -307,7 +301,7 @@ var EBT = {
 
 		this.lines = this.lines.filter(l => l !== '');
 
-		// go through each line into an array of tags and characters
+		// convert each line into an array of tags and characters
 		this.ln = 0;
 		while ((line = this.getLine()) !== false)
 		{
@@ -361,7 +355,9 @@ var EBT = {
 		var match;
 		while (match = this.definesRE.exec(str))
 		{
-			str = str.replace(match[0], match[1] + this.defines[match[2]] + match[3]);
+			var before = (typeof(match[1]) === 'undefined' ? '' : match[1]);
+			var after = (typeof(match[3]) === 'undefined' ? '' : match[3]);
+			str = str.replace(match[0], before + this.defines[match[2]] + after);
 		}
 
 		return str;
